@@ -23,8 +23,8 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
 
         if message_text.startswith("/summarize"):
             return summarize(message_text, user_id, chat_id)
-        elif message_text.startswith("/refresh_freifahren_df"):
-            return asyncio.run(refresh_freifahren_df(message_text, user_id, chat_id))
+        elif message_text.startswith("/get_freifahren_info"):
+            return asyncio.run(get_freifahren_info(message_text, user_id, chat_id))
         else:
             return {
                 "statusCode": 200,
@@ -68,21 +68,25 @@ def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
         }
 
 
-async def refresh_freifahren_df(body: str, user_id: int, chat_id: int) -> t.Dict:
+async def get_freifahren_info(body: str, user_id: int, chat_id: int) -> t.Dict:
     client, api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
+    openai_client = auth.get_openai_client()
     await client.connect()
+
+    sendReply(bot_token, chat_id, "Thanks for the request, thinking...")
 
     channel = await client.get_entity("t.me/freifahren_BE")
     logger.info(f"Channel: {channel}")
-    messages = await client.get_messages(channel, limit=1)
-    logger.info(f"Messages: {messages}")
-    msg = messages[0].text if messages else None
-    logger.info(f"Last message: {msg}")
+    messages = await client.get_messages(channel, limit=100)
+    messages = [msg.text for msg in messages]
 
-    if msg:
-        message = f"✅ Refreshed Freifahren DataFrame successfully with message: {msg}"
-        sendReply(bot_token, chat_id, message)
+    if not messages:
+        message_out = "❌ No messages found in Freifahren channel"
+    else:
+        prompt_freifahren = messages
+        prompt_user = body
 
+    sendReply(bot_token, chat_id, message_out)
     return {
         "statusCode": 200,
         "body": json.dumps({"message": "Authorization successful"}),

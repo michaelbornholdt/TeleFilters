@@ -49,7 +49,7 @@ class InfrastructureStack(Stack):
                 "BUCKET_NAME": bucket.bucket_name,
                 "BOT_SECRET": bot_secret.secret_arn,
                 "OPENAI_SECRET": openai_secret.secret_arn,
-                "LOG_LEVEL": "DEBUG",
+                "LOG_LEVEL": "INFO",
             },
             layers=[lambda_layer],
         )
