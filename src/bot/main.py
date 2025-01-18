@@ -8,7 +8,7 @@ logger.setLevel(logging.INFO)
 def lambda_handler(event, context):
     body = json.loads(event['body'])
 
-    print("*** Received event")
+    print("*** Received event", body)
 
     return {
         'statusCode': 200,
