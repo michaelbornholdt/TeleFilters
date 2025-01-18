@@ -55,7 +55,7 @@ class InfrastructureStack(Stack):
         )
 
         # Grant Lambda permissions to write to the S3 bucket
-        bucket.grant_write(bot_lambda_function)
+        bucket.grant_read_write(bot_lambda_function)
         # Grant Lambda permissions to read the secret
         bot_secret.grant_read(bot_lambda_function)
         openai_secret.grant_read(bot_lambda_function)

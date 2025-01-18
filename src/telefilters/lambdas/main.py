@@ -22,6 +22,8 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
 
         if message_text.startswith("/summarize"):
             return summarize(message_text, user_id, chat_id)
+        elif message_text.startswith("/refresh_freifahren_df"):
+            return refresh_freifahren_df(message_text, user_id, chat_id)
         else:
             return {
                 "statusCode": 200,
@@ -40,7 +42,7 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
 
 
 def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
-    api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
+    client, api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
 
     try:
         openai_client = auth.get_openai_client()
@@ -58,11 +60,6 @@ def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
         }
     except Exception as e:
         logger.error(f"Error in summarize function: {str(e)}")
-        error_message = "❌ Sorry, something went wrong while processing your request."
-        try:
-            sendReply(bot_token, chat_id, error_message)
-        except:
-            logger.error("Failed to send error message to user")
 
         return {
             "statusCode": 500,
@@ -70,13 +67,17 @@ def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
         }
 
 
-# def refresh_freifahren_df(body: str, user_id: str) -> str:
-#     telegram_client = auth.get_telegram_client(user_id)
+def refresh_freifahren_df(body: str, user_id: str) -> str:
+    client, api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
 
-#     return {
-#         "statusCode": 200,
-#         "body": json.dumps({"message": "Authorization successful"}),
-#     }
+    # retrieve last message with the client
+    # messages = client.
+    # sendReply(bot_token, chat_id, message)
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps({"message": "Authorization successful"}),
+    }
 
 
 # def auth(event: t.Dict, context: t.Dict) -> t.Dict:

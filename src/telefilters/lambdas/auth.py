@@ -3,6 +3,9 @@ import logging
 import os
 
 import boto3
+from s3fs.core import S3FileSystem
+from telethon.sessions import StringSession
+from telethon.sync import TelegramClient
 
 from openai import OpenAI
 
@@ -10,6 +13,7 @@ logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
 client = boto3.client("secretsmanager")
+fs = S3FileSystem()
 
 
 def get_telegram_client(user_id: int):
@@ -30,7 +34,27 @@ def get_telegram_client(user_id: int):
 
     bot_token = secret_value.get("bot_token")
 
-    return api_id, api_hash, bot_token
+    bucket_path = os.environ["BUCKET_NAME"]
+    session_path = f"{bucket_path}/{user_id}.session"
+
+    tel_client = None
+    if fs.exists(session_path):
+        logger.info(f"Session file exists at {session_path}")
+        with fs.open(session_path, "r") as f:
+            session_string = f.read()
+            logger.info(f"Session string: {session_string}")
+    else:
+        logger.info(f"Session file does not exist at {session_path}")
+        with TelegramClient(StringSession(), api_id, api_hash) as local_client:
+            logger.info(f"Creating new session file at {session_path}")
+            session_string = local_client.session.save()
+            with fs.open(session_path, "w") as f:
+                f.write(session_string)
+                logger.info(f"Stored string at: {session_string}")
+
+    tel_client = TelegramClient(StringSession(session_string), api_id, api_hash)
+    logger.info("Authenticated with Telegram API")
+    return tel_client, api_id, api_hash, bot_token
 
 
 def get_openai_client():

@@ -2,3 +2,4 @@ openai
 fsspec
 s3fs
 requests
+telethon
