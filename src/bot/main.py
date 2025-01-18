@@ -1,12 +1,22 @@
+import os
 import json
+import boto3
 import logging
 import typing as t
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+BUCKET_NAME = os.environ["BUCKET_NAME"]
+BOT_SECRET = os.environ['BOT_SECRET']
 
 def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
+    
+    # Retrieve the secret value
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId=BOT_SECRET)
+    bot_secret_data = json.loads(response.get('SecretString'))
+    
     body = json.loads(event['body'])
     logger.info(f"Event: {json.dumps(event)}")
 
@@ -35,7 +45,7 @@ def summarize(body: str) -> str:
     # cfg_dir: str = "/home/miha/TeleFilters/users/14242555",
     # read authorization token from s3
     with fsspec.open(
-        "s3://infrastructurestack-userdata6a2e227b-jjxpj68kosc9/users/14242555/config.py"
+        f"s3://{BUCKET_NAME}/users/14242555/config.py"
     ) as f:
         auth_cfg = f.read()
     api_id = auth_cfg["TELEGRAM_API_ID"]

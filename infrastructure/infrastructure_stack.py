@@ -5,6 +5,7 @@ from aws_cdk import (
     aws_s3 as s3,
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
+    aws_secretsmanager as secretsmanager,
     RemovalPolicy
 )
 from constructs import Construct
@@ -14,6 +15,11 @@ class InfrastructureStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
+        
+        # Retrieve secret from Secrets Manager
+        secret = secretsmanager.Secret.from_secret_name_v2(
+            self, "Bot", secret_name="dev/bot"
+        )
 
         # Create an S3 bucket
         bucket = s3.Bucket(
@@ -29,7 +35,8 @@ class InfrastructureStack(Stack):
             handler="main.lambda_handler",
             code=_lambda.Code.from_asset("src/bot"),
             environment={
-                "BUCKET_NAME": bucket.bucket_name
+                "BUCKET_NAME": bucket.bucket_name,
+                "BOT_SECRET": secret.secret_name,
             }
         )
 
