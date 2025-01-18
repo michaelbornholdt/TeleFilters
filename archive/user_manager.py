@@ -6,7 +6,7 @@ class UserManager:
     def __init__(
         self,
         # base_path: str = "s3://infrastructurestack-userdata6a2e227b-jjxpj68kosc9/users/",
-        base_path: str = "/home/miha/TeleFilters/users/14242555",
+        base_path: str = "/home/miha/TeleFilters/users",
     ):
         self.base_path = Path(base_path)
         self.base_path.mkdir(exist_ok=True)
@@ -24,17 +24,18 @@ class UserManager:
         user_path = self.base_path / str(api_id)
         user_path.mkdir(exist_ok=True)
 
-        # Create user-specific config.py
-        config_content = f"""
-            TELEGRAM_API_ID = {api_id}
-            TELEGRAM_API_HASH = "{api_hash}"
-            TELEGRAM_PHONE = "{phone_number}"
-            CREATED_AT: {str(datetime.now())}
-            ACTIVE: True
-            """
+        # Create user-specific config json
+        config_content = {
+            "TELEGRAM_API_ID": api_id,
+            "TELEGRAM_API_HASH": api_hash,
+            "TELEGRAM_PHONE": phone_number,
+            "CREATED_AT": str(datetime.now()),
+            "ACTIVE": True,
+        }
+        import json
 
-        with open(user_path / "config.py", "w") as f:
-            f.write(config_content)
+        with open(user_path / "config.json", "w") as f:
+            json.dump(config_content, f, indent=4)
 
         print(f"\nSuccessfully created user configuration at {user_path}")
         print("You can now run the bot with --fetch, --analyze, or --send options")
@@ -60,7 +61,11 @@ if __name__ == "__main__":
     from telethon.sync import TelegramClient
 
     um = UserManager()
-    # um.setup_new_user()
+    um.setup_new_user(
+        api_id=os.getenv("TELEGRAM_API_ID"),
+        api_hash=os.getenv("TELEGRAM_API_KEY"),
+        phone_number="+38640737782",
+    )
 
     # session_path = um.get_user_session_path("14242555")
 

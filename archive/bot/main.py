@@ -4,6 +4,8 @@ import boto3
 import logging
 import typing as t
 
+from bot import auth
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -39,25 +41,8 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
 
 
 def summarize(body: str) -> str:
-    import fsspec
-    from telethon.sync import TelegramClient
-
-    # base_path: str = "s3://infrastructurestack-userdata6a2e227b-jjxpj68kosc9/users/",
-    # cfg_dir: str = "/home/miha/TeleFilters/users/14242555",
-    # read authorization token from s3
-    with fsspec.open(
-        f"s3://{BUCKET_NAME}/users/14242555/config.py"
-    ) as f:
-        auth_cfg = json.load(f)
-
-    api_id = auth_cfg["TELEGRAM_API_ID"]
-    api_hash = auth_cfg["TELEGRAM_API_HASH"]
-
-    client = TelegramClient(
-        str("session_path"),  # Convert Path to string for Telethon
-        api_id=api_id,
-        api_hash=api_hash,
-    )
+    telegram_client = auth.get_telegram_client()
+    openai_client = auth.get_openai_client()
 
     return {
         "statusCode": 200,
