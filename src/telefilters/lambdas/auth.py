@@ -3,7 +3,6 @@ import logging
 import os
 
 import boto3
-import fsspec
 from telethon.sync import TelegramClient
 
 from openai import OpenAI
@@ -19,11 +18,6 @@ def get_telegram_client():
     response = client.get_secret_value(SecretId=secret_name)
     secret_value = json.loads(response.get("SecretString"))
     logger.info("Authenticating with Telegram API")
-
-    with fsspec.open(
-        "s3://infrastructurestack-userdata6a2e227b-jjxpj68kosc9/users/14242555/config.json"
-    ) as f:
-        auth_cfg = json.load(f)
 
     api_id = secret_value.get("telegram_api_id")
     api_hash = secret_value.get("telegram_api_hash")
@@ -44,12 +38,6 @@ def get_openai_client():
     response = client.get_secret_value(SecretId=secret_name)
     secret_value = json.loads(response.get("SecretString"))
     logger.info("Authenticating with OpenAI API")
-
-    with fsspec.open(
-        "s3://infrastructurestack-userdata6a2e227b-jjxpj68kosc9/openai/openai.json"
-    ) as f:
-        auth_cfg = json.load(f)
-        openai_api_key = auth_cfg["OPENAI_API_KEY"]
 
     openai_client = OpenAI(api_key=secret_value.get("openai_api_key"))
     return openai_client
