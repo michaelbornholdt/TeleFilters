@@ -33,6 +33,7 @@ def summarize(body: str) -> str:
     telegram_client = auth.get_telegram_client()
     openai_client = auth.get_openai_client()
 
+    logger.info("Authorization successful")
     return {
         "statusCode": 200,
         "body": json.dumps({"message": "Authorization successful"}),
