@@ -10,6 +10,7 @@ logger.setLevel(logging.INFO)
 BUCKET_NAME = os.environ["BUCKET_NAME"]
 BOT_SECRET = os.environ['BOT_SECRET']
 
+
 def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
     
     # Retrieve the secret value
@@ -47,7 +48,8 @@ def summarize(body: str) -> str:
     with fsspec.open(
         f"s3://{BUCKET_NAME}/users/14242555/config.py"
     ) as f:
-        auth_cfg = f.read()
+        auth_cfg = json.load(f)
+
     api_id = auth_cfg["TELEGRAM_API_ID"]
     api_hash = auth_cfg["TELEGRAM_API_HASH"]
 
@@ -79,3 +81,6 @@ def summarize(body: str) -> str:
 #         "statusCode": 200,
 #         "body": json.dumps({"message": "Authorization successful"}),
 #     }
+
+if __name__ == "__main__":
+    summarize("test")
