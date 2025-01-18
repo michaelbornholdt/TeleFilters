@@ -1,0 +1,7 @@
+telethon
+nest-asyncio
+python-dateutil
+python-dotenv
+pytest
+pytest-asyncio
+openai
