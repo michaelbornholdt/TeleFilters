@@ -3,7 +3,6 @@ import logging
 import os
 import typing as t
 
-
 from telefilters.lambdas import auth
 from telefilters.telegram.messaging import sendReply
 
@@ -59,9 +58,7 @@ def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
         }
     except Exception as e:
         logger.error(f"Error in summarize function: {str(e)}")
-        error_message = (
-            "❌ Sorry, something went wrong while processing your request."
-        )
+        error_message = "❌ Sorry, something went wrong while processing your request."
         try:
             sendReply(bot_token, chat_id, error_message)
         except:
