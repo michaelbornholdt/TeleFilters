@@ -61,3 +61,4 @@ users/
 
 .cdk.staging
 cdk.out
+openai/
