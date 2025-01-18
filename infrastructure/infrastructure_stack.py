@@ -47,8 +47,9 @@ class InfrastructureStack(Stack):
             memory_size=1024,
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
-                "BOT_SECRET": bot_secret.secret_name,
-                "OPENAI_SECRET": openai_secret.secret_name,
+                "BOT_SECRET": bot_secret.secret_arn,
+                "OPENAI_SECRET": openai_secret.secret_arn,
+                "LOG_LEVEL": "DEBUG",
             },
             layers=[lambda_layer],
         )

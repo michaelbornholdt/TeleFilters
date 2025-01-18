@@ -1,12 +1,17 @@
 import json
 import logging
+import os
 import typing as t
+
+import telegram
+from telethon.sessions import StringSession
+from telethon.sync import TelegramClient
 
 from telefilters.lambdas import auth
 from telefilters.telegram.messaging import send_telegram_message
 
 logger = logging.getLogger()
-logger.setLevel("INFO")
+logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
 
 def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
@@ -39,33 +44,43 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
 
 
 def summarize(body: str, user_id: str, chat_id: int) -> t.Dict:
-    telegram_client = auth.get_telegram_client(user_id)
-    try:
-        openai_client = auth.get_openai_client()
-        logger.info("Authorization successful")
+    api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
 
-        # Send authentication success message to user
-        message = "✅ Authentication successful! I'm now processing your request..."
-        send_telegram_message(telegram_client, chat_id, message)
+    with TelegramClient(
+        StringSession(os.environ.get("session")),
+        api_id=api_id,
+        api_hash=api_hash,
+    ) as telegram_client:
+        bot = telegram.Bot(token=bot_token)
 
-        return {
-            "statusCode": 200,
-            "body": json.dumps(
-                {"message": "Message sent to user successfully", "chat_id": chat_id}
-            ),
-        }
-    except Exception as e:
-        logger.error(f"Error in summarize function: {str(e)}")
-        error_message = "❌ Sorry, something went wrong while processing your request."
         try:
-            send_telegram_message(telegram_client, chat_id, error_message)
-        except:
-            logger.error("Failed to send error message to user")
+            openai_client = auth.get_openai_client()
+            logger.info("Authorization successful")
 
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"message": str(e)}),
-        }
+            # Send authentication success message to user
+            message = "✅ Authentication successful! I'm now processing your request..."
+            send_telegram_message(bot, chat_id, message)
+
+            return {
+                "statusCode": 200,
+                "body": json.dumps(
+                    {"message": "Message sent to user successfully", "chat_id": chat_id}
+                ),
+            }
+        except Exception as e:
+            logger.error(f"Error in summarize function: {str(e)}")
+            error_message = (
+                "❌ Sorry, something went wrong while processing your request."
+            )
+            try:
+                send_telegram_message(bot, chat_id, error_message)
+            except:
+                logger.error("Failed to send error message to user")
+
+            return {
+                "statusCode": 500,
+                "body": json.dumps({"message": str(e)}),
+            }
 
 
 # def refresh_freifahren_df(body: str, user_id: str) -> str:

@@ -3,12 +3,13 @@ import logging
 import os
 
 import boto3
+from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 
 from openai import OpenAI
 
 logger = logging.getLogger()
-logger.setLevel("INFO")
+logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
 client = boto3.client("secretsmanager")
 
@@ -20,19 +21,21 @@ def get_telegram_client(user_id: str):
     response = client.get_secret_value(SecretId=secret_name)
     secret_value = json.loads(response.get("SecretString"))
 
-    user_secrets = secret_value.get("users").get(user_id)
+    logger.info(f"Retrieved the secrets: {secret_value}")
+
+    user_secrets = secret_value.get("users").get(str(user_id))
+    logger.info(f"Retrieved the secrets: {user_secrets}")
 
     api_id = user_secrets.get("telegram_api_id")
     logger.info(f"Retrieved the secret api_id: {api_id}")
     api_hash = user_secrets.get("telegram_api_hash")
 
-    telegram_client = TelegramClient(
-        str("session_path"),  # Convert Path to string for Telethon
-        api_id=api_id,
-        api_hash=api_hash,
-    )
+    bot_token = secret_value.get("bot_token")
 
-    return telegram_client
+    with TelegramClient(StringSession(), api_id, api_hash) as telegram_client:
+        print(telegram_client.session.save())
+
+    return api_id, api_hash, bot_token
 
 
 def get_openai_client():
