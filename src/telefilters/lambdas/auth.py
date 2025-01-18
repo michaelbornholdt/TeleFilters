@@ -3,8 +3,6 @@ import logging
 import os
 
 import boto3
-from telethon.sessions import StringSession
-from telethon.sync import TelegramClient
 
 from openai import OpenAI
 
@@ -14,7 +12,7 @@ logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 client = boto3.client("secretsmanager")
 
 
-def get_telegram_client(user_id: str):
+def get_telegram_client(user_id: int):
     """Authenticate with Telegram API and return client"""
 
     secret_name = os.environ["BOT_SECRET"]

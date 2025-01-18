@@ -21,16 +21,6 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
         user_name = body["message"]["from"]["first_name"]
         message_text = body["message"]["text"]
 
-        if message_text["is_bot"] == "true":
-            return {
-                "statusCode": 200,
-                "body": json.dumps(
-                    {
-                        "message": f"Message from bot {user_name} in chat {chat_id}: {message_text}"
-                    }
-                ),
-            }
-
         if message_text.startswith("/summarize"):
             return summarize(message_text, user_id, chat_id)
         else:
@@ -50,7 +40,7 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
         }
 
 
-def summarize(body: str, user_id: str, chat_id: int) -> t.Dict:
+def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
     api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
 
     try:
