@@ -32,10 +32,7 @@ def get_telegram_client(user_id: str):
 
     bot_token = secret_value.get("bot_token")
 
-    with TelegramClient(StringSession(), api_id, api_hash) as telegram_client:
-        string = telegram_client.session.save()
-
-    return string, api_id, api_hash, bot_token
+    return api_id, api_hash, bot_token
 
 
 def get_openai_client():
