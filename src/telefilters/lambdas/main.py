@@ -17,7 +17,7 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
 
         chat_id = body["message"]["chat"]["id"]
         user_id = body["message"]["from"]["id"]
-        user_name = body["message"]["from"]["username"]
+        user_name = body["message"]["from"]["first_name"]
         message_text = body["message"]["text"]
 
         if message_text.startswith("/summarize"):
