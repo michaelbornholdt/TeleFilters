@@ -1,0 +1,4 @@
+openai
+telethon
+fsspec
+s3fs

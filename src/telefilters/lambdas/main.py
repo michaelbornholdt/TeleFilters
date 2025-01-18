@@ -39,6 +39,15 @@ def summarize(body: str) -> str:
     }
 
 
+def refresh_freifahren_df(body: str) -> str:
+    telegram_client = auth.get_telegram_client()
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps({"message": "Authorization successful"}),
+    }
+
+
 # def auth(event: t.Dict, context: t.Dict) -> t.Dict:
 #     logger.info(f"Event: {json.dumps(event)}")
 

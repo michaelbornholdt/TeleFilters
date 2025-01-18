@@ -62,6 +62,6 @@ users/
 
 .cdk.staging
 cdk.out
-src/lambda_layer/python/*
-!src/lambda_layer/python/requirements.txt
+infrastructure/lambda_layer/python/*
+!infrastructure/lambda_layer/python/requirements.txt
 openai/
