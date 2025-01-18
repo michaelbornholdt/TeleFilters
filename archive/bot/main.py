@@ -6,8 +6,9 @@ import typing as t
 
 from bot import auth
 
+logging.basicConfig(level = logging.INFO)
+# Retrieve the logger instance
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 BUCKET_NAME = os.environ["BUCKET_NAME"]
 BOT_SECRET = os.environ['BOT_SECRET']
@@ -21,14 +22,15 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
     bot_secret_data = json.loads(response.get('SecretString'))
     
     body = json.loads(event['body'])
-    logger.info(f"Event: {json.dumps(event)}")
+    logger.info(f"Event: {json.dumps(body)}")
 
     chat_id = body["message"]["chat"]["id"]
+    user_id = body["message"]["from"]["id"]
     user_name = body["message"]["from"]["username"]
     message_text = body["message"]["text"]
 
     if message_text.startswith("/summarize"):
-        return summarize(message_text)
+        return summarize(message_text, user_id)
     else:
         return {
             "statusCode": 200,
@@ -40,8 +42,8 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
         }
 
 
-def summarize(body: str) -> str:
-    telegram_client = auth.get_telegram_client()
+def summarize(body: str, user_id: str) -> str:
+    telegram_client = auth.get_telegram_client(user_id)
     openai_client = auth.get_openai_client()
 
     return {

@@ -11,7 +11,7 @@ client = boto3.client("secretsmanager")
 logger = logging.getLogger(__name__)
 
 
-def get_telegram_client():
+def get_telegram_client(user_id: str):
     """Authenticate with Telegram API and return client"""
 
     secret_name = os.environ["BOT_SECRET"]
@@ -19,8 +19,10 @@ def get_telegram_client():
     secret_value = json.loads(response.get("SecretString"))
     logger.info("Authenticating with Telegram API")
 
-    api_id = secret_value.get("telegram_api_id")
-    api_hash = secret_value.get("telegram_api_hash")
+    user_secrets = secret_value.get("users").get(user_id)
+    
+    api_id = user_secrets.get("telegram_api_id")
+    api_hash = user_secrets.get("telegram_api_hash")
 
     telegram_client = TelegramClient(
         str("session_path"),  # Convert Path to string for Telethon

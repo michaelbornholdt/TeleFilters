@@ -13,11 +13,12 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
     logger.info(f"Event: {json.dumps(event)}")
 
     chat_id = body["message"]["chat"]["id"]
+    user_id = body["message"]["from"]["id"]
     user_name = body["message"]["from"]["username"]
     message_text = body["message"]["text"]
 
     if message_text.startswith("/summarize"):
-        return summarize(message_text)
+        return summarize(message_text, user_id)
     else:
         return {
             "statusCode": 200,
@@ -29,8 +30,8 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
         }
 
 
-def summarize(body: str) -> str:
-    telegram_client = auth.get_telegram_client()
+def summarize(body: str, user_id: str) -> str:
+    telegram_client = auth.get_telegram_client(user_id)
     openai_client = auth.get_openai_client()
 
     logger.info("Authorization successful")
@@ -40,8 +41,8 @@ def summarize(body: str) -> str:
     }
 
 
-def refresh_freifahren_df(body: str) -> str:
-    telegram_client = auth.get_telegram_client()
+def refresh_freifahren_df(body: str, user_id: str) -> str:
+    telegram_client = auth.get_telegram_client(user_id)
 
     return {
         "statusCode": 200,
