@@ -1,4 +1,4 @@
-from aws_cdk import RemovalPolicy, Stack
+from aws_cdk import Duration, RemovalPolicy, Stack
 from aws_cdk import aws_apigateway as apigateway
 from aws_cdk import aws_lambda as _lambda
 from aws_cdk import aws_s3 as s3  # Duration,; aws_sqs as sqs,
@@ -14,7 +14,7 @@ class InfrastructureStack(Stack):
         bot_secret = secretsmanager.Secret.from_secret_name_v2(
             self, "Bot", secret_name="dev/bot"
         )
-        
+
         openai_secret = secretsmanager.Secret.from_secret_name_v2(
             self, "OpenAI", secret_name="dev/openai"
         )
@@ -43,6 +43,8 @@ class InfrastructureStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="telefilters.lambdas.main.lambda_handler",
             code=_lambda.Code.from_asset("src"),
+            timeout=Duration.seconds(30),
+            memory_size=1024,
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
                 "BOT_SECRET": bot_secret.secret_name,
@@ -53,7 +55,6 @@ class InfrastructureStack(Stack):
 
         # Grant Lambda permissions to write to the S3 bucket
         bucket.grant_write(bot_lambda_function)
-        
         # Grant Lambda permissions to read the secret
         bot_secret.grant_read(bot_lambda_function)
         openai_secret.grant_read(bot_lambda_function)

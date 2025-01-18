@@ -2,3 +2,4 @@ openai
 telethon
 fsspec
 s3fs
+python-telegram-bot

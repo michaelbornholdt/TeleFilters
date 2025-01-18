@@ -45,6 +45,7 @@ This project deploys an AWS infrastructure using the AWS Cloud Development Kit (
  - Install Python packages for the Lambda Layer:
     ```bash
     pip install -r lambda_layer/python/requirements.txt -t lambda_layer/python
+    pip install -t lambda_layer/python --platform manylinux2014_x86_64 --only-binary=:all: --upgrade pydantic pydantic_core
     ```
 3. **Configure the CDK App**: Ensure the app.py file references the correct resources and environment variables, such as the Secrets Manager secret name.
 4. **Deploy the CDK Stack**: Run the following command to deploy the stack:
