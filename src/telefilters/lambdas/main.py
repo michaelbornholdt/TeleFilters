@@ -5,8 +5,9 @@ import typing as t
 from telefilters.lambdas import auth
 from telefilters.telegram.messaging import send_telegram_message
 
+logging.basicConfig(level=logging.DEBUG)
+# Retrieve the logger instance
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
 
 
 def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
@@ -15,11 +16,12 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
         logger.info(f"Event: {json.dumps(event)}")
 
         chat_id = body["message"]["chat"]["id"]
+        user_id = body["message"]["from"]["id"]
         user_name = body["message"]["from"]["username"]
         message_text = body["message"]["text"]
 
         if message_text.startswith("/summarize"):
-            return summarize(message_text, chat_id)
+            return summarize(message_text, user_id, chat_id)
         else:
             return {
                 "statusCode": 200,
@@ -37,9 +39,9 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
         }
 
 
-def summarize(body: str, chat_id: int) -> t.Dict:
+def summarize(body: str, user_id: str, chat_id: int) -> t.Dict:
+    telegram_client = auth.get_telegram_client(user_id)
     try:
-        telegram_client = auth.get_telegram_client()
         openai_client = auth.get_openai_client()
         logger.info("Authorization successful")
 
@@ -57,7 +59,6 @@ def summarize(body: str, chat_id: int) -> t.Dict:
         logger.error(f"Error in summarize function: {str(e)}")
         error_message = "❌ Sorry, something went wrong while processing your request."
         try:
-            telegram_client = auth.get_telegram_client()
             send_telegram_message(telegram_client, chat_id, error_message)
         except:
             logger.error("Failed to send error message to user")
