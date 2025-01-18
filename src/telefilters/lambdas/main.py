@@ -6,7 +6,6 @@ from telefilters.lambdas import auth
 from telefilters.telegram.messaging import send_telegram_message
 
 logging.basicConfig(level=logging.DEBUG)
-# Retrieve the logger instance
 logger = logging.getLogger()
 
 

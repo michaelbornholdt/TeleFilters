@@ -3,8 +3,8 @@ import logging
 from telegram import Bot
 from telegram.error import TelegramError
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 async def send_telegram_message(bot: Bot, chat_id: int, message: str) -> None:

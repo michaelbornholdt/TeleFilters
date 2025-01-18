@@ -7,8 +7,11 @@ from telethon.sync import TelegramClient
 
 from openai import OpenAI
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger()
+
+
 client = boto3.client("secretsmanager")
-logger = logging.getLogger(__name__)
 
 
 def get_telegram_client(user_id: str):
@@ -17,11 +20,11 @@ def get_telegram_client(user_id: str):
     secret_name = os.environ["BOT_SECRET"]
     response = client.get_secret_value(SecretId=secret_name)
     secret_value = json.loads(response.get("SecretString"))
-    logger.info("Authenticating with Telegram API")
 
     user_secrets = secret_value.get("users").get(user_id)
-    
+
     api_id = user_secrets.get("telegram_api_id")
+    logger.info(f"Retrieved the secret api_id: {api_id}")
     api_hash = user_secrets.get("telegram_api_hash")
 
     telegram_client = TelegramClient(
