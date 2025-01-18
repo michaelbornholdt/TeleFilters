@@ -22,26 +22,17 @@ class InfrastructureStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True
         )
-        
-        # Create a Lambda layer for Python packages
-        lambda_layer = _lambda.LayerVersion(
-            self, "Packages",
-            code=_lambda.Code.from_asset("src/lambda_layer"),
-            compatible_runtimes=[_lambda.Runtime.PYTHON_3_9],
-            description="A layer for Python dependencies"
-        )
-        
+
         bot_lambda_function = _lambda.Function(
             self, "BotFunction",
             runtime=_lambda.Runtime.PYTHON_3_9,
-            handler="main.handler",
+            handler="main.lambda_handler",
             code=_lambda.Code.from_asset("src/bot"),
             environment={
                 "BUCKET_NAME": bucket.bucket_name
-            },
-            layers=[lambda_layer]
+            }
         )
-        
+
         # Grant Lambda permissions to write to the S3 bucket
         bucket.grant_write(bot_lambda_function)
 
