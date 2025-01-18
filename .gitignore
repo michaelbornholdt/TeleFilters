@@ -56,3 +56,4 @@ src/testTestingRootWkspc/coverageWorkspace/.coverage
 
 venv/
 .venv/
+users/
