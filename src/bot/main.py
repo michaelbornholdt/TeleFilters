@@ -7,11 +7,12 @@ logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
+    body = json.loads(event['body'])
     logger.info(f"Event: {json.dumps(event)}")
 
-    chat_id = event["message"]["chat"]["id"]
-    user_name = event["message"]["from"]["username"]
-    message_text = event["message"]["text"]
+    chat_id = body["message"]["chat"]["id"]
+    user_name = body["message"]["from"]["username"]
+    message_text = body["message"]["text"]
 
     return {
         "statusCode": 200,
