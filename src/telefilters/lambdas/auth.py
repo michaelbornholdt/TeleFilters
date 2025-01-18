@@ -3,8 +3,6 @@ import logging
 import os
 
 import boto3
-from telethon.sessions import StringSession
-from telethon.sync import TelegramClient
 
 from openai import OpenAI
 
