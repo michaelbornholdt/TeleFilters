@@ -7,7 +7,7 @@ logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
-    body = json.loads(event['body'])
+    body = json.loads(event["body"])
     logger.info(f"Event: {json.dumps(event)}")
 
     chat_id = body["message"]["chat"]["id"]
@@ -35,9 +35,10 @@ def summarize(body: str) -> str:
     # cfg_dir: str = "/home/miha/TeleFilters/users/14242555",
     # read authorization token from s3
     with fsspec.open(
-        "s3://infrastructurestack-userdata6a2e227b-jjxpj68kosc9/users/14242555/config.py"
+        "s3://infrastructurestack-userdata6a2e227b-jjxpj68kosc9/users/14242555/config.json"
     ) as f:
-        auth_cfg = f.read()
+        auth_cfg = json.load(f)
+
     api_id = auth_cfg["TELEGRAM_API_ID"]
     api_hash = auth_cfg["TELEGRAM_API_HASH"]
 
@@ -69,3 +70,6 @@ def summarize(body: str) -> str:
 #         "statusCode": 200,
 #         "body": json.dumps({"message": "Authorization successful"}),
 #     }
+
+if __name__ == "__main__":
+    summarize("test")
