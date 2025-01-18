@@ -21,3 +21,24 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
             }
         ),
     }
+
+
+# def auth(event: t.Dict, context: t.Dict) -> t.Dict:
+#     logger.info(f"Event: {json.dumps(event)}")
+
+#     from user_manager import UserManager
+
+#     # read authorization token from s3
+#     um = UserManager()
+
+#     um.
+
+
+#     return {
+#         "statusCode": 200,
+#         "body": json.dumps(
+#             {
+#                 "message": "Authorization successful"
+#             }
+#         ),
+#     }
