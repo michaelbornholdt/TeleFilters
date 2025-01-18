@@ -58,3 +58,6 @@ venv/
 .venv/
 users/
 .env
+
+.cdk.staging
+cdk.out
