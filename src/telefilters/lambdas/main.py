@@ -5,8 +5,8 @@ import typing as t
 from telefilters.lambdas import auth
 from telefilters.telegram.messaging import send_telegram_message
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
+logger.setLevel("INFO")
 
 
 def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:

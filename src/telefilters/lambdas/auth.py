@@ -7,9 +7,8 @@ from telethon.sync import TelegramClient
 
 from openai import OpenAI
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
-
+logger.setLevel("INFO")
 
 client = boto3.client("secretsmanager")
 
