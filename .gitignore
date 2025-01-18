@@ -63,3 +63,4 @@ users/
 cdk.out
 src/lambda_layer/python/*
 !src/lambda_layer/python/requirements.txt
+openai/
