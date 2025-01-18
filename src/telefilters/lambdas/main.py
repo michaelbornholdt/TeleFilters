@@ -24,8 +24,8 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
 
         if message_text.startswith("/summarize"):
             return summarize(message_text, user_id, chat_id)
-        elif message_text.startswith("/get_freifahren_info"):
-            return asyncio.run(get_freifahren_info(message_text, user_id, chat_id))
+        elif message_text.startswith("/get_bvg_risk"):
+            return asyncio.run(get_bvg_risk(message_text, user_id, chat_id))
         else:
             return {
                 "statusCode": 200,
@@ -69,7 +69,7 @@ def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
         }
 
 
-async def get_freifahren_info(body: str, user_id: int, chat_id: int) -> t.Dict:
+async def get_bvg_risk(body: str, user_id: int, chat_id: int) -> t.Dict:
     """Get risk assessment for Freifahren channel\
         
     Args:
