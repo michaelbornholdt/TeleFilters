@@ -42,7 +42,6 @@ def get_telegram_client(user_id: int):
         logger.info(f"Session file exists at {session_path}")
         with fs.open(session_path, "r") as f:
             session_string = f.read()
-            logger.info(f"Session string: {session_string}")
     else:
         logger.info(f"Session file does not exist at {session_path}")
         with TelegramClient(StringSession(), api_id, api_hash) as local_client:
@@ -50,7 +49,6 @@ def get_telegram_client(user_id: int):
             session_string = local_client.session.save()
             with fs.open(session_path, "w") as f:
                 f.write(session_string)
-                logger.info(f"Stored string at: {session_string}")
 
     tel_client = TelegramClient(StringSession(session_string), api_id, api_hash)
     logger.info("Authenticated with Telegram API")

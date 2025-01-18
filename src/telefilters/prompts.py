@@ -1,8 +1,8 @@
+import asyncio
 import logging
 import os
 import typing as t
 from datetime import datetime
-from typing import Optional
 
 from openai import OpenAI
 
@@ -20,59 +20,45 @@ SYSTEM_PROMPT = """
     """
 
 
-def get_freifahren_risk_assessment(
+async def get_freifahren_risk_assessment(
     client: OpenAI,
     user_prompt: str,
     freifahren_prompt: str,
     system_prompt: t.Optional[str] = None,
     model: str = "gpt-4-turbo-preview",
     temperature: float = 0.7,
-    max_tokens: Optional[int] = None,
+    max_tokens: t.Optional[int] = None,
 ) -> str:
-    """
-    Get a chat completion from OpenAI API.
-
-    Args:
-        client: Authenticated OpenAI client
-        system_prompt: System message to set context/behavior
-        user_prompt: User's input message
-        model: OpenAI model to use
-        temperature: Controls randomness (0.0-2.0)
-        max_tokens: Maximum tokens in response (None for model default)
-
-    Returns:
-        str: Assistant's response message
-    """
+    """Async wrapper for OpenAI API call"""
     time = datetime.now().strftime("%H:%M")
-
     if system_prompt is None:
         system_prompt = SYSTEM_PROMPT
 
     freifahren_system_prompt = f"""
-        Here are the hints of the locations of the ticket inspectors. They are based on the recent reports from the community.
-        Each message consists of time in H:M format and a text from community. Text can be either in german or english. Current time is {time}.
-        \nHere are the last 20 messages:\n
-        """
+    Here are the hints of the locations of the ticket inspectors. They are based on the recent reports from the community.
+    Each message consists of time in H:M format and a text from community. Text can be either in german or english. Current time is {time}.
+    \nHere are the last 20 messages:\n
+    """
     freifahren_prompt = freifahren_system_prompt + freifahren_prompt
-    logger.info(f"System prompt: {system_prompt}")
-    logger.info(f"Freifahren prompt: {freifahren_prompt}")
-    logger.info(f"User prompt: {user_prompt}")
 
     try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": freifahren_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
+        # Since OpenAI's client is synchronous, we'll run it in a thread pool
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": freifahren_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=temperature,
+                max_tokens=max_tokens,
+            ),
         )
 
-        # Extract the assistant's message from the response
         assistant_message = response.choices[0].message.content
-
         logger.info(f"Successfully got chat completion using {model}")
         return assistant_message
 

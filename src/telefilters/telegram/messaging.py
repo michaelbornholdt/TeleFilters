@@ -1,18 +1,17 @@
-import json
 import logging
 import os
 
-import requests
+import aiohttp
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
 
-def sendReply(bot_token, chat_id, message):
+async def sendReply(bot_token: str, chat_id: int, message: str):
+    """Async version of sendReply using aiohttp"""
     reply = {"chat_id": chat_id, "text": message}
-
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    encoded_data = json.dumps(reply).encode("utf-8")
-    requests.post(url, json=reply, headers={"Content-Type": "application/json"})
-
-    print(f"*** Reply : {encoded_data}")
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=reply) as response:
+            await response.json()
+            logger.info(f"Sent reply: {message}")

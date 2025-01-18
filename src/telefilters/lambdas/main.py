@@ -25,7 +25,15 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
         if message_text.startswith("/summarize"):
             return summarize(message_text, user_id, chat_id)
         elif message_text.startswith("/get_bvg_risk"):
-            return asyncio.run(get_bvg_risk(message_text, user_id, chat_id))
+            # Create new event loop for async operation
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(
+                    get_bvg_risk(message_text, user_id, chat_id)
+                )
+            finally:
+                loop.close()
         else:
             return {
                 "statusCode": 200,
@@ -35,6 +43,7 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
                     }
                 ),
             }
+
     except Exception as e:
         logger.error(f"Error in lambda_handler: {str(e)}")
         return {
@@ -70,48 +79,64 @@ def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
 
 
 async def get_bvg_risk(body: str, user_id: int, chat_id: int) -> t.Dict:
-    """Get risk assessment for Freifahren channel\
-        
-    Args:
-        body (str): User's input message
-        user_id (int): User's ID
-        chat_id (int): Chat ID
+    """Get risk assessment for Freifahren channel"""
+    try:
+        client, api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
 
-    Returns:
-        dict: Response message
-    """
+        # Send thinking message
+        await sendReply(bot_token, chat_id, "Thanks for the request, thinking...")
 
-    client, api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
-    openai_client = auth.get_openai_client()
-    await client.connect()
+        try:
+            await client.connect()
+            channel = await client.get_entity("t.me/freifahren_BE")
+            logger.info(f"Channel: {channel}")
 
-    sendReply(bot_token, chat_id, "Thanks for the request, thinking...")
+            # Get messages and reverse them after converting to list
+            messages = await client.get_messages(channel, limit=20)
+            messages = list(messages)[::-1]
 
-    channel = await client.get_entity("t.me/freifahren_BE")
-    logger.info(f"Channel: {channel}")
+            if not messages:
+                message_out = "No messages found in Freifahren channel"
+                await sendReply(bot_token, chat_id, message_out)
+                return {
+                    "statusCode": 200,
+                    "body": json.dumps({"message": message_out}),
+                }
 
-    messages = await client.get_messages(channel, limit=20)[::-1]
-    if not messages:
-        message_out = "No messages found in Freifahren channel"
-        return
+            messages = [(msg.date.strftime("%H:%M"), msg.text) for msg in messages]
+            logger.info(f"Freifahren messages: {messages}")
 
-    messages = [(msg.date.strftime("%H:%M"), msg.text) for msg in messages]
-    logger.info(f"Freifahren messages: {messages}")
-    prompt_freifahren = "\n".join([f"{time}: {text}" for time, text in messages])
+            prompt_freifahren = "\n".join(
+                [f"{time}: {text}" for time, text in messages]
+            )
+            openai_client = auth.get_openai_client()
 
-    message_out = get_freifahren_risk_assessment(
-        client=openai_client,
-        user_prompt=body,
-        freifahren_prompt=prompt_freifahren,
-    )
-    logger.info(f"Assistant's response:\n{message_out}")
+            message_out = await get_freifahren_risk_assessment(
+                client=openai_client,
+                user_prompt=body,
+                freifahren_prompt=prompt_freifahren,
+            )
 
-    sendReply(bot_token, chat_id, message_out)
-    return {
-        "statusCode": 200,
-        "body": json.dumps({"message": "Authorization successful"}),
-    }
+            logger.info(f"Assistant's response:\n{message_out}")
+            await sendReply(bot_token, chat_id, message_out)
 
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"message": "Request processed successfully"}),
+            }
 
-if __name__ == "__main__":
-    summarize("test")
+        finally:
+            await client.disconnect()
+
+    except Exception as e:
+        error_message = f"Error processing request: {str(e)}"
+        logger.error(error_message)
+        await sendReply(
+            bot_token,
+            chat_id,
+            "Sorry, an error occurred while processing your request.",
+        )
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"message": error_message}),
+        }
