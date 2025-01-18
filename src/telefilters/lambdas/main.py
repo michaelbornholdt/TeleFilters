@@ -5,7 +5,7 @@ import typing as t
 from telefilters.lambdas import auth
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
