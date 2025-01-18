@@ -2,8 +2,7 @@ import json
 import logging
 import os
 import typing as t
-
-import telegram
+import time
 from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 
@@ -46,13 +45,13 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
 def summarize(body: str, user_id: str, chat_id: int) -> t.Dict:
     api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
 
-    with TelegramClient(
-        StringSession(os.environ.get("session")),
+    bot = TelegramClient(
+        StringSession(),
         api_id=api_id,
         api_hash=api_hash,
-    ) as telegram_client:
-        bot = telegram.Bot(token=bot_token)
-
+    ).start(bot_token=bot_token)
+    time.sleep(3)
+    with bot:
         try:
             openai_client = auth.get_openai_client()
             logger.info("Authorization successful")
