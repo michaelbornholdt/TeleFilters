@@ -11,8 +11,12 @@ class InfrastructureStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # Retrieve secret from Secrets Manager
-        secret = secretsmanager.Secret.from_secret_name_v2(
+        bot_secret = secretsmanager.Secret.from_secret_name_v2(
             self, "Bot", secret_name="dev/bot"
+        )
+        
+        openai_secret = secretsmanager.Secret.from_secret_name_v2(
+            self, "OpenAI", secret_name="dev/openai"
         )
 
         # Create an S3 bucket
@@ -41,13 +45,18 @@ class InfrastructureStack(Stack):
             code=_lambda.Code.from_asset("src"),
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
-                "BOT_SECRET": secret.secret_name,
+                "BOT_SECRET": bot_secret.secret_name,
+                "OPENAI_SECRET": openai_secret.secret_name,
             },
             layers=[lambda_layer],
         )
 
         # Grant Lambda permissions to write to the S3 bucket
         bucket.grant_write(bot_lambda_function)
+        
+        # Grant Lambda permissions to read the secret
+        bot_secret.grant_read(bot_lambda_function)
+        openai_secret.grant_read(bot_lambda_function)
 
         # Create an API Gateway
         api = apigateway.RestApi(
