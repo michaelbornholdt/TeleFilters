@@ -52,12 +52,6 @@ This project deploys an AWS infrastructure using the AWS Cloud Development Kit (
     cdk deploy
     ```
     The CDK CLI will prompt for confirmation. Type y to proceed.
-5. **Test the Deployment**:
- - Use an HTTP client (e.g., curl or Postman) to test the API Gateway endpoint.
- - Example POST request:
-    ```bash
-    curl -X POST https://<API_ID>.execute-api.<REGION>.amazonaws.com/prod/bot -d '{"key": "value"}'
-    ```
 
 ## Cleanup
 To avoid incurring charges, destroy the stack when you no longer need it:
