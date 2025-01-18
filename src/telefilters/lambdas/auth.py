@@ -35,7 +35,7 @@ def get_telegram_client(user_id: int):
     bot_token = secret_value.get("bot_token")
 
     bucket_path = os.environ["BUCKET_NAME"]
-    session_path = f"{bucket_path}/{user_id}.session"
+    session_path = f"{bucket_path}/sessions/{user_id}.session"
 
     tel_client = None
     if fs.exists(session_path):

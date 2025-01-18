@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -23,7 +24,7 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
         if message_text.startswith("/summarize"):
             return summarize(message_text, user_id, chat_id)
         elif message_text.startswith("/refresh_freifahren_df"):
-            return refresh_freifahren_df(message_text, user_id, chat_id)
+            return asyncio.run(refresh_freifahren_df(message_text, user_id, chat_id))
         else:
             return {
                 "statusCode": 200,
@@ -67,12 +68,20 @@ def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
         }
 
 
-def refresh_freifahren_df(body: str, user_id: str) -> str:
+async def refresh_freifahren_df(body: str, user_id: int, chat_id: int) -> t.Dict:
     client, api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
+    await client.connect()
 
-    # retrieve last message with the client
-    # messages = client.
-    # sendReply(bot_token, chat_id, message)
+    channel = await client.get_entity("t.me/freifahren_BE")
+    logger.info(f"Channel: {channel}")
+    messages = await client.get_messages(channel, limit=1)
+    logger.info(f"Messages: {messages}")
+    msg = messages[0].text if messages else None
+    logger.info(f"Last message: {msg}")
+
+    if msg:
+        message = f"✅ Refreshed Freifahren DataFrame successfully with message: {msg}"
+        sendReply(bot_token, chat_id, message)
 
     return {
         "statusCode": 200,
