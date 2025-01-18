@@ -1,43 +1,59 @@
-from openai import AsyncOpenAI
-from typing import Dict, List
-import logging
 import json
-from pathlib import Path
+import logging
 from datetime import datetime
+from pathlib import Path
+from typing import Tuple
+
+from openai import AsyncOpenAI
+
 logger = logging.getLogger(__name__)
 
-def get_latest_messages_file(user_id: int) -> tuple[Path, str]:
+
+def get_latest_messages_file(user_id: int) -> Tuple[Path, str]:
     """Get the path to the most recent messages file for a user and its timestamp"""
     messages_dir = Path("users") / str(user_id) / "messages"
     logger.info(f"Searching for messages in {messages_dir}")
 
     if not messages_dir.exists():
         raise FileNotFoundError(f"No messages directory found for user {user_id}")
-        
+
     message_files = list(messages_dir.glob("messages_*.json"))
     if not message_files:
         raise FileNotFoundError(f"No message files found in {messages_dir}")
-        
+
     # Sort files by modification time, newest first
     latest_file = max(message_files, key=lambda x: x.stat().st_mtime)
     # Extract timestamp from filename (e.g., "messages_2024-03-26_15-30.json")
-    timestamp = latest_file.stem.replace('messages_', '')
-    
+    timestamp = latest_file.stem.replace("messages_", "")
+
     logger.info(f"Using latest messages file: {latest_file.name}")
     return latest_file, timestamp
+
+
 """Get the latest messages file for a user and its timestamp"""
+
+
 class ConversationAnalyzer:
-    def __init__(self, api_key, model, temperature, relevant_categories=None, irrelevant_topics=None):
+    def __init__(
+        self,
+        api_key,
+        model,
+        temperature,
+        relevant_categories=None,
+        irrelevant_topics=None,
+    ):
         self.client = AsyncOpenAI(api_key=api_key)
         self.model = model
         self.temperature = temperature
         self.categories = relevant_categories or []
         self.irrelevant = irrelevant_topics or []
         self.api_calls = 0
-        logger.info(f"Initialized ConversationAnalyzer with model {model}, temperature {temperature}")
+        logger.info(
+            f"Initialized ConversationAnalyzer with model {model}, temperature {temperature}"
+        )
 
     def _base_prompt(self):
-        return f"""You are analyzing Telegram conversations from Berlin communities.
+        return """You are analyzing Telegram conversations from Berlin communities.
 
 # Your Task:
 Find relevant topics: Only focus on finding these!
@@ -52,25 +68,25 @@ Find relevant topics: Only focus on finding these!
 - Job offers
 
 Please respond in this JSON format:
-{{
+{
     "type": "event|request|offer|announcement",
     "summary": "Brief description of what's happening, Date and Location if mentioned and who is involved if relevant"
-}}
+}
 
 # Example output 
-{{
+{
     "type": "request",
     "summary": "Kinky Market is happening on December 1st and volunteers are needed."
-}}
+}
 OR
-{{
+{
     "type": "event",
     "summary": "Michael is inviting to a board game evening on the 12.12 starting at 18.00 at Standard Strasse 13a. React to the message to sign up." 
-}}
-{{
+}
+{
     "type": "event",
     "summary": "5th Birthday of the Burner Embassy Berlin is happening today (Saturday) at Haus der Statistik from 4pm-10pm. Activities include art, Burner Bingo, firespinning, and a potluck buffet. Location: Otto-Braun-Strasse 70, 10178 Berlin."
-}}
+}
 
 # Final Note
 
@@ -79,19 +95,21 @@ VERY IMPORTANT: Only respond if the conversation is relevant!
 
     async def _call_llm(self, content: str) -> str:
         # Log the actual content being sent to LLM
-        logger.debug("\nInput to LLM:\n" + "-"*40 + "\n" + content + "\n" + "-"*40 + "\n")
-        
+        logger.debug(
+            "\nInput to LLM:\n" + "-" * 40 + "\n" + content + "\n" + "-" * 40 + "\n"
+        )
+
         messages = [
             {"role": "system", "content": self._base_prompt()},
-            {"role": "user", "content": content}
+            {"role": "user", "content": content},
         ]
-        
-        self.api_calls += 1 # Increment counter
+
+        self.api_calls += 1  # Increment counter
         completion = await self.client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=self.temperature,
-            max_tokens=500
+            max_tokens=500,
         )
         return completion.choices[0].message.content
 
@@ -100,13 +118,15 @@ VERY IMPORTANT: Only respond if the conversation is relevant!
         try:
             # Clean the response if it's wrapped in markdown code blocks
             cleaned_response = response
-            if response.startswith('```json'):
-                cleaned_response = response.replace('```json', '').replace('```', '').strip()
-            
+            if response.startswith("```json"):
+                cleaned_response = (
+                    response.replace("```json", "").replace("```", "").strip()
+                )
+
             # Parse the cleaned JSON
             return json.loads(cleaned_response)
-            
-        except json.JSONDecodeError as e:
+
+        except json.JSONDecodeError:
             logger.error(f"Failed to parse LLM response: {response}")
             return {}  # Return empty dict on parse failure
 
@@ -115,23 +135,23 @@ VERY IMPORTANT: Only respond if the conversation is relevant!
         try:
             # Parse the JSON response from LLM using the new parser
             data = self._parse_llm_response(analysis)
-            
+
             # Handle both single entry and array of entries
             if isinstance(data, list):
                 entries = data
             else:
                 entries = [data]
-            
+
             # Format each entry
             markdown_entries = []
             for entry in entries:
-                if entry.get('type') and entry.get('summary'):
+                if entry.get("type") and entry.get("summary"):
                     markdown = f"**{group}**\n"
                     markdown += f"*{entry['type'].title()}*: {entry['summary']}"
-                    if entry.get('details'):
+                    if entry.get("details"):
                         markdown += f"\n_{entry['details']}_"
                     markdown_entries.append(markdown)
-            
+
             return markdown_entries
         except Exception as e:
             logger.error(f"Failed to format analysis: {str(e)}")
@@ -142,26 +162,26 @@ VERY IMPORTANT: Only respond if the conversation is relevant!
         try:
             # Get latest file and its timestamp
             messages_file, timestamp = get_latest_messages_file(user_id)
-            
+
             # Create analysis directory if it doesn't exist
             analysis_dir = Path("users") / str(user_id) / "analysis"
             analysis_dir.mkdir(exist_ok=True)
-            
+
             # Load messages
-            with open(messages_file, 'r', encoding='utf-8') as f:
+            with open(messages_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                
+
             # Analyze messages
             markdown_entries = await self._analyze_data(data, test_mode)
-            
+
             # Save results using same timestamp as input file
             output_file = analysis_dir / f"filtered_{timestamp}.json"
-            with open(output_file, 'w', encoding='utf-8') as f:
+            with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(markdown_entries, f, ensure_ascii=False, indent=2)
-                
+
             logger.info(f"Analysis complete. Results saved to {output_file}")
             return markdown_entries
-            
+
         except Exception as e:
             logger.error(f"Error analyzing conversations: {e}")
             return []
@@ -171,35 +191,35 @@ VERY IMPORTANT: Only respond if the conversation is relevant!
         try:
             markdown_entries = []
             conversations = data.get("conversations", [])
-            
+
             if test_mode:
                 logger.info("Test mode: analyzing only first 3 conversations")
                 conversations = conversations[:3]
-            
+
             total = len(conversations)
             processed = 0
 
             for conversation in conversations:
-                chat_name = conversation.get('chat_name', 'Untitled')
-                topic = conversation.get('topic', '')
-                messages = conversation.get('messages', [])
-                
+                chat_name = conversation.get("chat_name", "Untitled")
+                topic = conversation.get("topic", "")
+                messages = conversation.get("messages", [])
+
                 if not messages:
                     continue
-                    
+
                 group_name = f"{chat_name}{' - Topic: ' + topic if topic else ''}"
-                
+
                 content = f"Channel: {chat_name}\n"
                 if topic:
                     content += f"Topic: {topic}\n"
                 content += "\nMessages:\n"
-                
+
                 for msg in messages:
-                    name = msg.get('name', 'Unknown')
-                    text = msg.get('content', '')
-                    timestamp = msg.get('timestamp', '')
+                    name = msg.get("name", "Unknown")
+                    text = msg.get("content", "")
+                    timestamp = msg.get("timestamp", "")
                     weekday = datetime.fromisoformat(timestamp).strftime("%A")
-                    
+
                     # Format message with timestamp
                     if timestamp:
                         content += f"[{weekday} {timestamp}] {name}: {text}\n"
@@ -209,21 +229,24 @@ VERY IMPORTANT: Only respond if the conversation is relevant!
                 try:
                     analysis = await self._call_llm(content)
                     processed += 1
-                    
+
                     entries = self._format_analysis_to_markdown(group_name, analysis)
                     markdown_entries.extend(entries)
-                    
+
                     logger.info(f"LLM Response for {chat_name}:\n{analysis}\n{'-'*80}")
                 except Exception as e:
                     logger.error(f"Error analyzing {chat_name}: {str(e)}")
-                    
-            logger.info(f"Analysis complete. Processed {processed} conversations with {self.api_calls} API calls.")
+
+            logger.info(
+                f"Analysis complete. Processed {processed} conversations with {self.api_calls} API calls."
+            )
             return markdown_entries
         except Exception as e:
             logger.error(f"Error in _analyze_data: {e}")
             return []
-            
-#negative examples
+
+
+# negative examples
 """
 {
     "name": "ElinaCoLoving",
