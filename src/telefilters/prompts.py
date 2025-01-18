@@ -20,6 +20,14 @@ SYSTEM_PROMPT = """
     """
 
 
+SUMMARY_PROMPT = """
+    Based on the provided analysis, give a brief, direct response about:
+    1. The overall risk level (Low/Medium/High)
+    2. One key reason for your assessment
+    Keep your response under 5 sentences and be direct.
+    """
+
+
 async def get_freifahren_risk_assessment(
     client: OpenAI,
     user_prompt: str,
@@ -29,41 +37,107 @@ async def get_freifahren_risk_assessment(
     temperature: float = 0.7,
     max_tokens: t.Optional[int] = None,
 ) -> str:
-    """Async wrapper for OpenAI API call"""
-    time = datetime.now().strftime("%H:%M")
-    if system_prompt is None:
-        system_prompt = SYSTEM_PROMPT
+    """Get a risk assessment for encountering ticket inspectors.
 
-    freifahren_system_prompt = f"""
+    Makes two API calls:
+    1. Detailed analysis of the situation
+    2. Concise summary for the user
+
+    Args:
+        client: OpenAI client
+        user_prompt: User's journey question
+        freifahren_prompt: Recent inspector sightings
+        system_prompt: Optional override for system prompt
+        model: OpenAI model to use
+        temperature: Response randomness (0.0-2.0)
+        max_tokens: Maximum tokens in response
+
+    Returns:
+        str: Concise risk assessment message
+    """
+    time = datetime.now().strftime("%H:%M")
+
+    context_prompt = f"""
     Here are the hints of the locations of the ticket inspectors. They are based on the recent reports from the community.
     Each message consists of time in H:M format and a text from community. Text can be either in german or english. Current time is {time}.
     \nHere are the last 20 messages:\n
+    {freifahren_prompt}
     """
-    freifahren_prompt = freifahren_system_prompt + freifahren_prompt
 
     try:
-        # Since OpenAI's client is synchronous, we'll run it in a thread pool
+        # First call: Detailed analysis
+        detailed_analysis = await _make_openai_call(
+            client=client,
+            system_prompt=SYSTEM_PROMPT,
+            user_prompts=[context_prompt, user_prompt],
+            model=model,
+            temperature=temperature,
+            max_tokens=1000,  # Allow longer response for analysis
+        )
+
+        logger.info(f"Detailed analysis:\n{detailed_analysis}")
+
+        # Second call: Concise summary
+        summary_prompt = f"Based on this analysis:\n{detailed_analysis}\n\nProvide a concise risk assessment."
+        final_response = await _make_openai_call(
+            client=client,
+            system_prompt=SUMMARY_PROMPT,
+            user_prompts=[summary_prompt],
+            model=model,
+            temperature=temperature,
+            max_tokens=150,  # Keep summary brief
+        )
+
+        logger.info(f"Final response:\n{final_response}")
+        return final_response
+
+    except Exception as e:
+        logger.error(f"Error getting risk assessment: {str(e)}")
+        raise
+
+
+async def _make_openai_call(
+    client: OpenAI,
+    system_prompt: str,
+    user_prompts: t.List[str],
+    model: str,
+    temperature: float,
+    max_tokens: int,
+) -> str:
+    """Helper function to make OpenAI API calls.
+
+    Args:
+        client: OpenAI client
+        system_prompt: System message
+        user_prompts: List of user messages
+        model: OpenAI model
+        temperature: Response randomness
+        max_tokens: Maximum tokens
+
+    Returns:
+        str: Assistant's response
+    """
+    try:
         loop = asyncio.get_event_loop()
+        messages = [{"role": "system", "content": system_prompt}]
+        messages.extend(
+            [{"role": "user", "content": prompt} for prompt in user_prompts]
+        )
+
         response = await loop.run_in_executor(
             None,
             lambda: client.chat.completions.create(
                 model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": freifahren_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
+                messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
             ),
         )
 
-        assistant_message = response.choices[0].message.content
-        logger.info(f"Successfully got chat completion using {model}")
-        return assistant_message
+        return response.choices[0].message.content
 
     except Exception as e:
-        logger.error(f"Error getting chat completion: {str(e)}")
+        logger.error(f"Error in OpenAI call: {str(e)}")
         raise
 
 

@@ -43,7 +43,7 @@ class InfrastructureStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="telefilters.lambdas.main.lambda_handler",
             code=_lambda.Code.from_asset("src"),
-            timeout=Duration.seconds(30),
+            timeout=Duration.seconds(45),
             memory_size=1024,
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
