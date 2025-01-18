@@ -1,8 +1,9 @@
 import json
 import logging
 import os
-import typing as t
 import time
+import typing as t
+
 from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 
@@ -43,7 +44,7 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
 
 
 def summarize(body: str, user_id: str, chat_id: int) -> t.Dict:
-    api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
+    string, api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
 
     bot = TelegramClient(
         StringSession(),
