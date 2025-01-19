@@ -23,7 +23,8 @@ SYSTEM_PROMPT = """
 SUMMARY_PROMPT = """
     Based on the provided analysis, give a brief, direct response about:
     1. The overall risk level (Low/Medium/High)
-    2. Key reasons for your assessment, they should reflect recent sightings of ticket inspectors times and locations.
+    2. Key reasons for your assessment, they should directly reflect recent
+    sightings of ticket inspectors with times and locations information.
     Keep your response under 5 sentences and be direct.
     """
 
