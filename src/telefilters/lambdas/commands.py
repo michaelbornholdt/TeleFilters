@@ -28,6 +28,12 @@ async def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
         message = "✅ Authentication successful! I'm now processing your request..."
         sendReply(bot_token, chat_id, message)
 
+        from telefilters.telegram.scraper import scrape_messages
+        from telefilters.telegram.process import analyze_conversations
+
+        #scraped_content = scrape_messages(client=client)
+        #processed_content = analyze_conversations(openai_client, scraped_content)
+    
         return {
             "statusCode": 200,
             "body": json.dumps(
@@ -36,7 +42,6 @@ async def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
         }
     except Exception as e:
         logger.error(f"Error in summarize function: {str(e)}")
-
         return {
             "statusCode": 500,
             "body": json.dumps({"message": str(e)}),

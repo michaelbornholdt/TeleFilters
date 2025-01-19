@@ -32,7 +32,7 @@ def get_telegram_client(user_id: int):
     bot_token, api_id, api_hash = get_telegram_secrets()
 
     bucket_path = os.environ["BUCKET_NAME"]
-    session_path = f"{bucket_path}/sessions/{user_id}.session"
+    session_path = f"{bucket_path}/sessions/1839661938.session"
 
     tel_client = None
     if fs.exists(session_path):
