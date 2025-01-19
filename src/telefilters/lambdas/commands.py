@@ -3,13 +3,18 @@ import logging
 import os
 import typing as t
 
+from s3fs.core import S3FileSystem
 from telefilters import auth
 from telefilters.prompts import get_freifahren_risk_assessment
 from telefilters.telegram.messaging import sendReply
 
+fs = S3FileSystem()
+
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
+bucket_path = os.environ["BUCKET_NAME"]
+phone_path = "{bucket_path}/sessions/{user_id}.phone"
 
 async def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
     raise NotImplementedError("This function is not working right yet.")
@@ -36,12 +41,61 @@ async def summarize(body: str, user_id: int, chat_id: int) -> t.Dict:
             "statusCode": 500,
             "body": json.dumps({"message": str(e)}),
         }
+   
+        
+async def sign_in(code: str, user_id: int, chat_id: int):
+
+    bot_token, api_id, api_hash = auth.get_telegram_secrets()
+    path = phone_path.format(bucket_path=bucket_path, user_id=user_id)
+    session_path = f"{bucket_path}/sessions/{user_id}.session"
+
+    with auth.TelegramClient(
+        auth.StringSession(),
+        api_id,
+        api_hash
+    ) as local_client:
+        if not await local_client.is_user_authorized():
+            if fs.exists(path):
+                logger.info(f"Session file exists at {path}")
+                with fs.open(path, "r") as f:
+                    phone = f.read()
+                    try:
+                        await local_client.sign_in(phone, code=code)
+                        await sendReply(bot_token, chat_id, "Logged in")
+                        session_string = local_client.session.save()
+                        with fs.open(session_path, "w") as f:
+                            f.write(session_string)
+                    except:
+                        await sendReply(bot_token, chat_id, "Wrong code. Try again.")
+
+
+async def login(phone: str, user_id: int, chat_id: int):
+
+    bot_token, api_id, api_hash = auth.get_telegram_secrets()
+
+    with auth.TelegramClient(
+        auth.StringSession(),
+        api_id,
+        api_hash
+    ) as local_client:
+        if not await local_client.is_user_authorized():
+            with fs.open(phone_path.format(
+                bucket_path=bucket_path,
+                user_id=user_id),
+                "w"
+            ) as f:
+                f.write(phone)
+            await local_client.send_code_request(phone, force_sms=False)
+            await sendReply(bot_token, chat_id, "You will receive a code. Then type /code xxxxxxx")
 
 
 async def get_bvg_risk(body: str, user_id: int, chat_id: int) -> t.Dict:
     """Get risk assessment for Freifahren channel"""
     try:
-        client, api_id, api_hash, bot_token = auth.get_telegram_client(user_id)
+        client, bot_token = auth.get_telegram_client(user_id)
+
+        if not client:
+            await sendReply(bot_token, chat_id, "You are not logged in. Type /login +you_phone")
 
         # Send thinking message
         await sendReply(bot_token, chat_id, "Thanks for the request, thinking...")

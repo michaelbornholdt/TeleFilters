@@ -4,7 +4,7 @@ import logging
 import os
 import typing as t
 
-from telefilters.lambdas.commands import get_bvg_risk
+from telefilters.lambdas.commands import get_bvg_risk, login, sign_in
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -29,6 +29,26 @@ def lambda_handler(event: t.Dict, context: t.Dict) -> t.Dict:
             try:
                 return loop.run_until_complete(
                     get_bvg_risk(message_text, user_id, chat_id)
+                )
+            finally:
+                loop.close()
+        if message_text.startswith("/login"):
+            phone = message_text.split()[1]
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(
+                    login(phone, user_id, chat_id)
+                )
+            finally:
+                loop.close()
+        if message_text.startswith("/code"):
+            code = message_text.split()[1]
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(
+                    sign_in(code, user_id, chat_id)
                 )
             finally:
                 loop.close()
