@@ -9,7 +9,7 @@ from openai import AsyncOpenAI
 logger = logging.getLogger(__name__)
 
 
-def _base_prompt(self):
+def _base_prompt():
         return """You are analyzing Telegram conversations from Berlin communities.
 
 # Your Task:
@@ -50,25 +50,23 @@ OR
 VERY IMPORTANT: Only respond if the conversation is relevant!
 """
 
-async def _call_llm(content: str) -> str:
+async def _call_llm(client: AsyncOpenAI, content: str) -> str:
     # Log the actual content being sent to LLM
-    
 
     messages = [
-        {"role": "system", "content": self._base_prompt()},
+        {"role": "system", "content": _base_prompt()},
         {"role": "user", "content": content},
     ]
 
-    self.api_calls += 1  # Increment counter
-    completion = await self.client.chat.completions.create(
-        model=self.model,
+    api_calls += 1  # Increment counter
+    completion = await client.chat.completions.create(
+        model="gpt-4o",
         messages=messages,
-        temperature=self.temperature,
         max_tokens=500,
     )
     return completion.choices[0].message.content
 
-def _parse_llm_response(self, response: str) -> dict:
+def _parse_llm_response(response: str) -> dict:
     """Parse the LLM response, handling both pure JSON and markdown-formatted JSON"""
     try:
         # Clean the response if it's wrapped in markdown code blocks
@@ -85,11 +83,11 @@ def _parse_llm_response(self, response: str) -> dict:
         logger.error(f"Failed to parse LLM response: {response}")
         return {}  # Return empty dict on parse failure
 
-def _format_analysis_to_markdown(self, group: str, analysis: str) -> str:
+def _format_analysis_to_markdown(group: str, analysis: str) -> str:
     """Format a single analysis entry as markdown"""
     try:
         # Parse the JSON response from LLM using the new parser
-        data = self._parse_llm_response(analysis)
+        data = _parse_llm_response(analysis)
 
         # Handle both single entry and array of entries
         if isinstance(data, list):
