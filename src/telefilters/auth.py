@@ -23,19 +23,14 @@ def get_telegram_client(user_id: int):
     response = client.get_secret_value(SecretId=secret_name)
     secret_value = json.loads(response.get("SecretString"))
 
-    logger.info(f"Retrieved the secrets: {secret_value}")
-
-    user_secrets = secret_value.get("users").get(str(user_id))
-    logger.info(f"Retrieved the secrets: {user_secrets}")
-
-    api_id = user_secrets.get("telegram_api_id")
+    api_id = secret_value.get("telegram_api_id")
     logger.info(f"Retrieved the secret api_id: {api_id}")
-    api_hash = user_secrets.get("telegram_api_hash")
+    api_hash = secret_value.get("telegram_api_hash")
 
     bot_token = secret_value.get("bot_token")
 
     bucket_path = os.environ["BUCKET_NAME"]
-    session_path = f"{bucket_path}/sessions/{user_id}.session"
+    session_path = f"{bucket_path}/sessions/1839661938.session"
 
     tel_client = None
     if fs.exists(session_path):
